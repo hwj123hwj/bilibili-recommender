@@ -17,6 +17,10 @@
 - **向量搜索**: llama-index + pgvector
 - **LLM**: SiliconFlow / Gemini
 
+### OpenClaw Skill
+- 这是一个 OpenClaw skill，安装后 agent 可以直接调用
+- 推荐结果通过 agent 的自然语言输出呈现，不需要额外推送功能
+
 ### 用户的 B站信息
 - **UID**: 1512253857
 - **个人主页**: https://space.bilibili.com/1512253857
@@ -189,49 +193,48 @@ MAX_RECOMMENDATIONS_PER_RUN = 10  # 每次最多推荐10个
 
 ---
 
-### 模块 6: 飞书推送 (bili_feishu_notifier.py)
+### 模块 6: 推荐结果展示 (bili_recommendation_formatter.py)
 
 **功能**：
-- 格式化推荐结果
-- 通过飞书 Webhook 或 API 推送
-- 消息格式：标题、UP主、标签、推荐理由、视频链接
+- 格式化推荐结果为自然语言输出
+- 通过 agent 对话界面呈现给用户
+- 包含：标题、UP主、标签、匹配度、推荐理由、视频链接
 
 **实现思路**：
 1. 读取 recommendation_logs 中 status='pending' 的记录
 2. 关联 bili_video_contents 和 up_users 表获取详细信息
-3. 格式化为飞书富文本消息
-4. 调用飞书 API 推送
+3. 格式化为自然语言消息（供 agent 直接输出）
+4. 更新推荐记录状态为 'viewed'
 
-**消息格式示例**：
+**输出格式示例**：
 ```
-🎬 B站视频推荐
+🎬 B站视频推荐（3 条）
 
 【1】视频标题
-UP主: XXX
-标签: AI, 技术, 编程
-匹配度: 8.5/10
-推荐理由: 该视频讲解了最新的 AI 技术，符合你对技术内容的兴趣...
-链接: https://www.bilibili.com/video/BVxxx
+👤 UP主: XXX
+🏷️ 标签: AI, 技术, 编程
+⭐ 匹配度: 8.5/10
+💡 推荐理由: 该视频讲解了最新的 AI 技术，符合你对技术内容的兴趣...
+🔗 链接: https://www.bilibili.com/video/BVxxx
+
+【2】...
 ```
 
 ## 📁 项目结构
 
 ```
-bilibili-toolkit/
-├── SKILL.md  # 更新文档
+bilibili-recommender/
+├── SKILL.md  # Skill 文档
+├── README.md  # 项目说明
 ├── scripts/
-│   ├── bili_collect_and_export.py  # 现有（不要修改）
-│   ├── bili_kb_llama.py  # 现有（不要修改）
-│   ├── bili_search_llama.py  # 现有（不要修改）
-│   ├── bili_up_summarizer.py  # 现有（不要修改）
-│   ├── bili_followings_updater.py  # ⭐ 新增
-│   ├── bili_new_video_checker.py  # ⭐ 新增
-│   ├── bili_interest_profiler.py  # ⭐ 新增
-│   ├── bili_video_scorer.py  # ⭐ 新增
-│   ├── bili_recommendation_scheduler.py  # ⭐ 新增
-│   ├── bili_feishu_notifier.py  # ⭐ 新增
-│   └── init_recommendation_db.py  # ⭐ 新增（初始化数据库表）
-└── secrets.json  # 现有（不要修改）
+│   ├── init_recommendation_db.py  # ⭐ 初始化数据库表
+│   ├── bili_followings_updater.py  # ⭐ 关注列表管理
+│   ├── bili_new_video_checker.py  # ⭐ 新视频检查
+│   ├── bili_interest_profiler.py  # ⭐ 兴趣画像建模
+│   ├── bili_video_scorer.py  # ⭐ 视频兴趣匹配
+│   ├── bili_recommendation_scheduler.py  # ⭐ 定时推荐引擎
+│   └── bili_recommendation_formatter.py  # ⭐ 推荐结果格式化
+└── config.json  # 配置文件（包含数据库、API 密钥等）
 ```
 
 ## 🔑 配置要求
@@ -256,12 +259,6 @@ SILICONFLOW_API_KEY=<你的API Key>
 ### 新增配置（需要添加）
 
 ```bash
-# 飞书推送（需要配置）
-FEISHU_WEBHOOK_URL=<你的飞书Webhook URL>
-# 或使用 Feishu Open API
-FEISHU_APP_ID=<飞书应用ID>
-FEISHU_APP_SECRET=<飞书应用密钥>
-
 # 推荐系统配置
 YOUR_BILIBILI_UID=1512253857
 CHECK_INTERVAL_SECONDS=3600  # 检查间隔（秒）
@@ -285,18 +282,19 @@ MAX_RECOMMENDATIONS=10  # 每次最多推荐数量
 1. ⏳ 实现 bili_video_scorer.py
 2. ⏳ 实现 bili_recommendation_scheduler.py
 
-### Phase 4: 推送
-1. ⏳ 实现 bili_feishu_notifier.py
-2. ⏳ 更新 SKILL.md 文档
+### Phase 4: 展示和文档
+1. ⏳ 实现 bili_recommendation_formatter.py
+2. ⏳ 更新 SKILL.md 文档（OpenClaw skill 文档）
+3. ⏳ 测试 skill 安装和使用
 
 ## ⚠️ 注意事项
 
-1. **不要修改现有代码**：bili_collect_and_export.py 等现有脚本保持不变
+1. **不要修改现有代码**：保持现有脚本不变
 2. **复用现有功能**：ASR、向量搜索等直接调用已有脚本或模块
 3. **数据库事务**：确保插入/更新操作使用事务，避免数据不一致
 4. **错误处理**：API 调用失败要有重试机制和日志记录
 5. **配置灵活**：所有阈值和参数应可通过环境变量配置
-6. **飞书推送**：使用 OpenClaw 的 message 工具（feishu channel），不需要额外 Webhook
+6. **OpenClaw Skill**：这是一个 OpenClaw skill，推荐结果通过 agent 自然语言输出呈现
 
 ## 🎯 验收标准
 
@@ -304,7 +302,7 @@ MAX_RECOMMENDATIONS=10  # 每次最多推荐数量
 2. ✅ 能检测到新视频
 3. ✅ 兴趣画像能反映用户的观看偏好
 4. ✅ 推荐分数合理，符合用户兴趣
-5. ✅ 能通过飞书成功推送推荐结果
+5. ✅ 能通过 agent 对话界面展示推荐结果
 6. ✅ 推荐历史可查询，支持反馈（喜欢/不感兴趣）
 
 ## 📄 许可证

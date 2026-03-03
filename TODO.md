@@ -33,12 +33,12 @@
   - [ ] 过滤低分视频
   - [ ] 调用飞书推送器
 
-## Phase 4: 推送和文档
-- [ ] 实现 bili_feishu_notifier.py
-  - [ ] 读取 recommendation_logs 待推送记录
-  - [ ] 格式化推荐消息
-  - [ ] 使用 OpenClaw message 工具推送
-- [ ] 更新 SKILL.md 文档
+## Phase 4: 展示和文档
+- [ ] 实现 bili_recommendation_formatter.py
+  - [ ] 读取 recommendation_logs 待展示记录
+  - [ ] 格式化推荐消息为自然语言
+  - [ ] 更新推荐记录状态
+- [ ] 创建 SKILL.md（OpenClaw skill 文档）
 - [ ] 测试完整流程
 - [ ] 编写使用文档
 
